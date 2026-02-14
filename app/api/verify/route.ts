@@ -21,33 +21,59 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Image is required" }, { status: 400 });
         }
 
-        // Remove the data URL prefix if present (e.g., "data:image/jpeg;base64,")
+        // Clean base64: Remove data URL prefix if present
         const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
 
-        // Reverting to base gemini-1.5-flash as it was most stable
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // --- Robust Model Fallback ---
+        // Trying multiple versions to avoid the persistent 404 and region-lock issues
+        const modelsToTry = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
+            "gemini-1.5-flash-latest"
+        ];
 
-        const prompt = `You are the ParallelPantry Auditor. Analyze the photo for visual markers of financial distress (empty fridge, gas gauge at empty, utility final notice, empty pantry). 
+        let result = null;
+        let lastError = null;
+
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`[AI Auditor] Trying model: ${modelName}...`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+
+                const prompt = `You are the ParallelPantry Auditor. Analyze the photo for visual markers of financial distress (empty fridge, gas gauge at empty, utility final notice, empty pantry). 
     
-    Rules:
-    1. If it is a stock photo or obvious screenshot, score 0.
-    2. Genuine photos of the user showing extreme sadness, crying, or despair are valid markers of distress and should be scored 90+.
-    3. If it shows clear evidence of immediate need (e.g., completely empty fridge, disconnection notice), score 95.
-    4. Be strict but compassionate. 
+    Dynamic Payout Rules:
+    1. Score 0-100 based on distress evidence.
+    2. Suggest a "payoutAmount" based on score:
+       - Score 90+: $100 (Immediate extreme need/Essential notice)
+       - Score 75-89: $50 (Significant pantry emptiness/despair)
+       - Score 60-74: $25 (Low supplies/sadness)
+       - Score < 60: $0 (Insufficient evidence/Screenshot/Stock photo)
     
     Return ONLY valid JSON with this structure: 
-    {"score": number, "reason": "string", "urgency": "low" | "medium" | "high"}
+    {"score": number, "reason": "string", "urgency": "low" | "medium" | "high", "payoutAmount": number}
     Do not include markdown formatting like \`\`\`json. Just return the raw JSON object.`;
 
-        const result = await model.generateContent([
-            prompt,
-            {
-                inlineData: {
-                    data: base64Image,
-                    mimeType: "image/jpeg",
-                },
-            },
-        ]);
+                result = await model.generateContent([
+                    prompt,
+                    {
+                        inlineData: {
+                            data: base64Image,
+                            mimeType: "image/jpeg",
+                        },
+                    },
+                ]);
+
+                if (result) break; // Success!
+            } catch (err: any) {
+                console.warn(`[AI Auditor] ${modelName} failed: ${err.message}`);
+                lastError = err;
+            }
+        }
+
+        if (!result) {
+            throw new Error(`All Gemini models failed. Last error: ${lastError?.message}`);
+        }
 
         const response = await result.response;
         const text = response.text();
@@ -58,6 +84,12 @@ export async function POST(req: NextRequest) {
         let analysis;
         try {
             analysis = JSON.parse(jsonString);
+
+            // Ensure payoutAmount is present and numeric
+            if (typeof analysis.payoutAmount !== 'number') {
+                analysis.payoutAmount = analysis.score >= 60 ? 50 : 0;
+            }
+
         } catch {
             console.error("Failed to parse Gemini response:", text);
             return NextResponse.json(
@@ -67,10 +99,10 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json(analysis);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error in AI Auditor:", error);
         return NextResponse.json(
-            { error: "Internal Server Error" },
+            { error: error.message || "Internal Server Error" },
             { status: 500 }
         );
     }

@@ -19,11 +19,12 @@ interface EvaluationResult {
     status: VerificationStatus;
     score: number;
     reason: string;
+    payoutAmount?: number;
 }
 
 // Verification Thresholds
-const THRESHOLD_PASS = 85;
-const THRESHOLD_RETRY = 50;
+const THRESHOLD_PASS = 60; // Lowered to support $25 minimum payouts
+const THRESHOLD_RETRY = 40;
 
 export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModalProps) {
     const { wallets } = useWallets();
@@ -37,12 +38,12 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
     const wallet = wallets[0];
 
     // Autonomous AI Verification Handler
-    const processAIScore = (result: { score: number; reason: string }): EvaluationResult => {
-        const { score, reason } = result;
+    const processAIScore = (result: { score: number; reason: string; payoutAmount?: number }): EvaluationResult => {
+        const { score, reason, payoutAmount } = result;
 
         if (score >= THRESHOLD_PASS) {
             // PASS: High confidence verification
-            return { status: "approved", score, reason };
+            return { status: "approved", score, reason, payoutAmount };
         } else if (score >= THRESHOLD_RETRY) {
             // SOFT REJECT: Needs better photo
             return { status: "pending", score, reason };
@@ -114,13 +115,14 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
                     status: evaluation.status,
                     score: evaluation.score,
                     reason: evaluation.reason,
-                });
+                    payoutAmount: evaluation.payoutAmount, // New dynamic field
+                } as any);
             }
 
             // If approved, trigger confetti and payout
             if (evaluation.status === "approved" && wallet?.address) {
                 triggerConfetti();
-                console.log("Payout Grant Triggered for:", email);
+                console.log(`Payout Grant ($${evaluation.payoutAmount}) Triggered for:`, email);
 
                 // Trigger Backend Payout
                 try {
@@ -130,7 +132,8 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
                         body: JSON.stringify({
                             recipientAddress: wallet.address,
                             score: evaluation.score,
-                            reason: evaluation.reason
+                            reason: evaluation.reason,
+                            payoutAmount: evaluation.payoutAmount // New dynamic field
                         })
                     });
                 } catch (payoutErr) {

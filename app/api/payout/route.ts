@@ -4,7 +4,7 @@ import { addToQueue, getUserClaimCount, getQueue } from "@/lib/payout-store";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { recipientAddress, score, reason } = body;
+        const { recipientAddress, score, reason, payoutAmount } = body;
 
         // 1. Validation
         if (!recipientAddress || !score) {
@@ -29,19 +29,22 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 3. AI Threshold Check (Strict)
-        if (score < 85) {
+        // 3. AI Threshold Check (Dynamic)
+        // Now supporting 60+ for smaller $25 grants
+        if (score < 60) {
             return NextResponse.json({
                 error: "Score too low for automatic payout",
-                details: "AI Auditor requires a score of 85+ for instant relief."
+                details: "AI Auditor requires a score of 60+ for instant relief."
             }, { status: 403 });
         }
 
         // 4. Queue the Payout
+        const finalAmount = payoutAmount || 50; // Fallback to 50 if missing
+
         const payoutRequest = {
             id: Date.now().toString(),
             recipientAddress,
-            amount: "50",
+            amount: finalAmount.toString(),
             score,
             reason,
             timestamp: Date.now()
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest) {
 
         addToQueue(payoutRequest);
 
-        console.log(`Queued payout of 50 PathUSD for ${recipientAddress} (Score: ${score})`);
+        console.log(`Queued payout of ${finalAmount} PathUSD for ${recipientAddress} (Score: ${score})`);
 
         return NextResponse.json({
             success: true,

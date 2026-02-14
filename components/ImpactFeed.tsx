@@ -14,6 +14,7 @@ export interface ImpactRequest {
     status: "approved" | "pending" | "rejected";
     score: number;
     reason: string;
+    payoutAmount?: number;
 }
 
 interface ImpactFeedProps {
@@ -52,10 +53,10 @@ export default function ImpactFeed({ requests }: ImpactFeedProps) {
                             }}
                             layout
                             className={`group relative aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-900 shadow-lg hover:shadow-xl transition-all hover:scale-105 ${req.status === "rejected"
-                                    ? "border-2 border-red-500/30"
-                                    : req.status === "pending"
-                                        ? "border-2 border-brand-amber/30"
-                                        : "border border-neutral-800"
+                                ? "border-2 border-red-500/30"
+                                : req.status === "pending"
+                                    ? "border-2 border-brand-amber/30"
+                                    : "border border-neutral-800"
                                 }`}
                         >
                             {/* Image with conditional filter */}
@@ -64,8 +65,8 @@ export default function ImpactFeed({ requests }: ImpactFeedProps) {
                                 alt="Proof of Need"
                                 fill
                                 className={`object-cover transition-all duration-500 ${req.status === "rejected"
-                                        ? "grayscale blur-[2px] group-hover:grayscale-0 group-hover:blur-0"
-                                        : "blur-[2px] group-hover:blur-0"
+                                    ? "grayscale blur-[2px] group-hover:grayscale-0 group-hover:blur-0"
+                                    : "blur-[2px] group-hover:blur-0"
                                     } scale-110 group-hover:scale-100`}
                                 unoptimized
                             />
@@ -117,27 +118,27 @@ export default function ImpactFeed({ requests }: ImpactFeedProps) {
                                     </div>
                                 </div>
 
-                                {/* Title based on status */}
+                                {/* Dynamic Amount Display */}
                                 {req.status === "approved" && (
-                                    <h3 className="text-white font-bold text-lg leading-tight mb-2">
-                                        $50 Relief <br /> <span className="text-brand-green">Provided</span>
+                                    <h3 className="text-white font-bold text-xl leading-tight mb-2">
+                                        ${req.payoutAmount || 50} <br /> <span className="text-brand-green text-lg">Relief Provided</span>
                                     </h3>
                                 )}
                                 {req.status === "pending" && (
                                     <h3 className="text-white font-bold text-lg leading-tight mb-2">
-                                        Review <br /> <span className="text-brand-amber">Pending</span>
+                                        Review <br /> <span className="text-brand-amber text-lg">In Progress</span>
                                     </h3>
                                 )}
                                 {req.status === "rejected" && (
                                     <h3 className="text-white font-bold text-lg leading-tight mb-2">
-                                        Verification <br /> <span className="text-red-500">Failed</span>
+                                        Verification <br /> <span className="text-red-500 text-lg">Declined</span>
                                     </h3>
                                 )}
 
                                 {/* AI Reason - Transparency */}
                                 <div className="bg-black/60 backdrop-blur-sm rounded-lg p-2 mb-2 border border-neutral-700/50">
                                     <p className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1">
-                                        AI Analysis
+                                        On-Chain Audit
                                     </p>
                                     <p className="text-xs text-neutral-300 line-clamp-2 italic">
                                         &quot;{req.reason}&quot;
@@ -148,10 +149,10 @@ export default function ImpactFeed({ requests }: ImpactFeedProps) {
                                 <div className="flex items-center justify-between">
                                     <p className="text-xs text-neutral-400">
                                         Trust Score: <span className={`font-bold ${req.status === "approved"
-                                                ? "text-brand-green"
-                                                : req.status === "pending"
-                                                    ? "text-brand-amber"
-                                                    : "text-red-500"
+                                            ? "text-brand-green"
+                                            : req.status === "pending"
+                                                ? "text-brand-amber"
+                                                : "text-red-500"
                                             }`}>{req.score}/100</span>
                                     </p>
                                 </div>

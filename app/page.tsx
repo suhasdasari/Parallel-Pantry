@@ -43,7 +43,7 @@ export default function Home() {
     }
   }, [requests]);
 
-  const handlePayoutSuccess = ({ image, email, status, score, reason }: { image: string; email: string; status: "approved" | "pending" | "rejected"; score: number; reason: string }) => {
+  const handlePayoutSuccess = ({ image, email, status, score, reason, payoutAmount }: { image: string; email: string; status: "approved" | "pending" | "rejected"; score: number; reason: string; payoutAmount?: number }) => {
     // Add new request to the feed (approved, pending, or rejected)
     const newRequest: ImpactRequest = {
       id: Date.now().toString(),
@@ -53,6 +53,7 @@ export default function Home() {
       status,
       score,
       reason,
+      payoutAmount,
     };
 
     setRequests((prev) => [newRequest, ...prev]);

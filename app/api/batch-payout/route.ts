@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, createWalletClient, http, parseUnits } from "viem";
+import { createPublicClient, createWalletClient, http, parseUnits, stringToHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { tempoModerato } from "@/lib/tempo-chain";
 import { tempoActions } from "viem/tempo";
@@ -34,28 +34,39 @@ export async function POST(req: NextRequest) {
         console.log(`🚀 Processing Parallel Batch: ${queue.length} requests...`);
 
         // 2. Process in Parallel using 2D Nonces
-        const payoutAmount = parseUnits("50", PATH_USD_DECIMALS);
-
         const transactions = queue.map(async (payout, index) => {
             // Unique nonceKey (lane) for EVERY transaction to ensure absolute parallelization
-            // Using Date.now() + index to guarantee uniqueness across rounds
             const nonceKey = BigInt(Date.now() + index);
 
-            console.log(`[Lane ${nonceKey}] Sending $50 to ${payout.recipientAddress}...`);
+            // Dynamic Payout Amount logic
+            const amount = payout.amount || "50";
+            const amountWei = parseUnits(amount, PATH_USD_DECIMALS);
+
+            // Construct 32-byte Memo (On-chain Transparency)
+            // Format: "AUDIT:[SCORE]:[REASON]"
+            // We clip to 31 chars to be safe for 32-byte encoding if needed
+            const memoText = `AUDIT:${payout.score}:${payout.reason || "NEEDED"}`.substring(0, 31);
 
             try {
+                // Small staggered delay to avoid 429 Rate Limit from RPC during fast rounds
+                if (index > 0) await new Promise(r => setTimeout(r, index * 100));
+
+                console.log(`[Lane ${nonceKey}] Sending $${amount} to ${payout.recipientAddress} (Memo: ${memoText})...`);
+
                 const hash = await walletClient.writeContract({
                     address: VAULT_ADDRESS as `0x${string}`,
                     abi: VAULT_ABI,
                     functionName: "withdraw",
-                    args: [payout.recipientAddress as `0x${string}`, payoutAmount],
-                    nonceKey, // Multi-Dimensional Nonce (Parallel Execution)
+                    args: [payout.recipientAddress as `0x${string}`, amountWei],
+                    nonceKey,
+                    // Tempo-specific: include on-chain memo
+                    memo: memoText,
                 } as any);
 
                 recordClaim(payout.recipientAddress);
-                return { success: true, hash, recipient: payout.recipientAddress };
+                return { success: true, hash, recipient: payout.recipientAddress, amount, memo: memoText };
             } catch (err: any) {
-                console.error(`[Lane ${nonceKey}] Failed payout to ${payout.recipientAddress}:`, err.message);
+                console.error(`[Lane ${nonceKey}] Failed:`, err.message);
                 return { success: false, error: err.message, recipient: payout.recipientAddress };
             }
         });
@@ -72,7 +83,7 @@ export async function POST(req: NextRequest) {
             totalProcessed: queue.length,
             successful: successfulCount,
             results,
-            message: `Processed ${successfulCount}/${queue.length} relief distributions in parallel lanes.`
+            message: `Processed ${successfulCount}/${queue.length} dynamic distributions with on-chain memos.`
         });
 
     } catch (error: any) {
