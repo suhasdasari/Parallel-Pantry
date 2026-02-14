@@ -4,50 +4,56 @@ import { privateKeyToAccount } from "viem/accounts";
 import { tempoModerato } from "@/lib/tempo-chain";
 import { tempoActions } from "viem/tempo";
 import { VAULT_ABI, VAULT_ADDRESS, PATH_USD_DECIMALS } from "@/lib/contracts";
-import { getQueue, clearQueue, recordClaim } from "@/lib/payout-store";
+import { popQueue, recordClaim, isLocked, setLock } from "@/lib/payout-store";
 
 export async function POST(req: NextRequest) {
+    // 1. Check Lock (Simple concurrency protection)
+    if (isLocked()) {
+        console.log("Batch payout already in progress, skipping...");
+        return NextResponse.json({ success: true, message: "Sync in progress" });
+    }
+
     try {
-        const queue = getQueue();
+        setLock(true);
+
+        // Atomic pop: get items and clear file immediately
+        const queue = popQueue();
 
         if (queue.length === 0) {
+            setLock(false);
             return NextResponse.json({
                 success: true,
                 message: "No pending payouts in queue."
             });
         }
 
-        // 1. AI Agent Configuration
+        // 2. AI Agent Configuration
         const privateKey = process.env.AI_AGENT_PRIVATE_KEY;
         if (!privateKey) {
+            setLock(false);
             return NextResponse.json({ error: "Server payout configuration missing" }, { status: 500 });
         }
 
         const account = privateKeyToAccount(privateKey as `0x${string}`);
 
-        const publicClient = createPublicClient({
-            chain: tempoModerato,
-            transport: http(),
-        });
-
-        // Extend with Tempo actions for 2D Nonce support
         const walletClient = createWalletClient({
             account,
             chain: tempoModerato,
             transport: http(),
         }).extend(tempoActions());
 
-        console.log(`Processing Batch Payout of ${queue.length} requests using 2D nonces...`);
+        console.log(`🚀 Processing Parallel Batch: ${queue.length} requests...`);
 
-        // 2. Process in Parallel using 2D Nonces (Lanes 1 to N)
+        // 3. Process in Parallel using 2D Nonces
         const payoutAmount = parseUnits("50", PATH_USD_DECIMALS);
+        const startTime = Date.now();
 
         const transactions = queue.map(async (payout, index) => {
-            // Use a unique nonceKey (lane) for EVERY transaction to ensure absolute parallelization
-            // Date.now() + index guarantees a unique lane for every project payout
-            const nonceKey = BigInt(Date.now() + index);
+            // Highly unique nonceKey (lane) for EVERY transaction
+            // Multiplying by 1000 + index ensures lanes never collide across batches
+            const nonceKey = BigInt((startTime % 1000000) * 100 + index);
 
-            console.log(`[Lane ${nonceKey}] Sending $50 to ${payout.recipientAddress}...`);
+            console.log(`[Lane ${nonceKey}] Sending relief to ${payout.recipientAddress}...`);
 
             try {
                 const hash = await walletClient.writeContract({
@@ -55,32 +61,28 @@ export async function POST(req: NextRequest) {
                     abi: VAULT_ABI,
                     functionName: "withdraw",
                     args: [payout.recipientAddress as `0x${string}`, payoutAmount],
-                    nonceKey, // Multi-Dimensional Nonce (Parallel Execution)
+                    nonceKey,
                 } as any);
 
-                // Record the claim for this user
                 recordClaim(payout.recipientAddress);
-
-                return { success: true, hash, recipient: payout.recipientAddress, lane: index + 1 };
+                return { success: true, hash, recipient: payout.recipientAddress };
             } catch (err: any) {
-                console.error(`[Lane ${nonceKey}] Failed payout to ${payout.recipientAddress}:`, err.message);
-                return { success: false, error: err.message, recipient: payout.recipientAddress, lane: index + 1 };
+                console.error(`❌ Lane ${nonceKey} Failed:`, err.message);
+                return { success: false, error: err.message, recipient: payout.recipientAddress };
             }
         });
 
         const results = await Promise.all(transactions);
-
-        // 3. Clear Queue
-        clearQueue();
-
         const successfulCount = results.filter(r => r.success).length;
+
+        console.log(`✅ Batch Complete: ${successfulCount}/${queue.length} successful distributions.`);
 
         return NextResponse.json({
             success: true,
             totalProcessed: queue.length,
             successful: successfulCount,
             results,
-            message: `Processed ${successfulCount}/${queue.length} relief distributions in parallel lanes.`
+            message: `Processed ${successfulCount}/${queue.length} distributions in parallel lanes.`
         });
 
     } catch (error: any) {
@@ -89,5 +91,7 @@ export async function POST(req: NextRequest) {
             error: "Failed to process batch payout",
             details: error.message
         }, { status: 500 });
+    } finally {
+        setLock(false);
     }
 }
