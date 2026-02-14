@@ -1,76 +1,43 @@
-# Parallel Pantry
+# Parallel Pantry: High-Velocity AI Relief Round
 
-A decentralized, AI-verified community treasury capped at $50 per person to provide instant relief (food, gas, bills) to students and community members.
+**ParallelPantry** is a high-throughput, AI-powered micro-relief engine built on the **Tempo Network**. It converts the "slow and sequential" charity of today into a parallel financial rail for immediate crisis management (hunger, transport, essentials).
 
-## Project Overview
+## 🚀 Hackathon "Wow" Features
+- **AI Auditor "Race Mode"**: Achieves **sub-3-second verification** by firing concurrent requests to multiple Gemini models (`flash`, `flash-8b`, `latest`) simultaneously. The fastest successful result wins, eliminating sequential lag.
+- **High-Throughput Parallel Settlement**: Utilizes **Tempo 2D Nonces** to process multiple relief distributions concurrently, bypassing the standard blockchain bottleneck of sequential transactions.
+- **Direct On-Chain Transparency**: Every relief grant carries a **32-byte Audit Memo** (e.g., `AUDIT:95:FOOD_DEPLETION`) directly on the Tempo blockchain, providing a decentralized, immutable audit trail for donors.
+- **Dynamic Grant Scaling**: The AI Auditor intelligently recommends grant sizes (**$25, $50, or $100**) based on real-time urgency and distress analysis of the user's proof.
+- **Zero-Friction UX**: Integrated with **Privy Biometric Passkeys** for seamless onboarding and **Tempo Fee Sponsorship** to ensure victims receive 100% of the funds with zero gas requirements.
 
-This project uses:
--   **Next.js 14** (App Router)
--   **Tailwind CSS** (Styling)
--   **Privy Auth** (Passkeys & Identity)
--   **Gemini AI** (Proof of Need Verification)
--   **Tempo Blockchain** (Settlement Layer)
+## 🛠️ Project Stack
+- **Auth/Identity**: [Privy](https://www.privy.io/) (Biometric Passkeys)
+- **AI Engine**: [Google Gemini 1.5](https://deepmind.google/technologies/gemini/) (Multimodal Audit)
+- **Settlement Layer**: [Tempo Network](https://tempo.xyz/) (2D Nonces & Parallel Execution)
+- **Framework**: Next.js 14, Tailwind CSS, Viem
 
-## Prerequisites
+## 📦 Deployment Info
 
--   Node.js 18+ installed
--   Git installed
+- **Vault Contract:** `0x0b3012EdaA34872d536CeE2f80D4BfFD6e854B6A` (Deployed on Tempo Moderato)
+- **Currency:** pathUSD (6 Decimals) - `0x20C0000000000000000000000000000000000000`
+- **Chain ID:** 42431
 
-## Getting Started
+## 🚀 Getting Started
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd Parallel-Pantry
-    ```
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
+2. **Environment Setup:**
+   - Copy `.env.example` to `.env`
+   - Set `GEMINI_API_KEY` for the Auditor Race Engine.
+   - Set `AI_AGENT_PRIVATE_KEY` for the Autonomous Payout Agent.
 
-3.  **Environment Setup:**
-    -   Copy the example environment file:
-        ```bash
-        cp .env.example .env
-        ```
-    -   Fill in your API keys in the `.env` file:
-        -   `NEXT_PUBLIC_PRIVY_APP_ID`: Your Privy App ID (from Privy Dashboard)
-        -   `PRIVY_APP_SECRET`: Your Privy App Secret (from Privy Dashboard)
-        -   `GEMINI_API_KEY`: Your Google Gemini API Key
-        -   `NEXT_PUBLIC_TEMPO_RPC_URL`: Tempo RPC URL (if connecting to custom node)
+3. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-4.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
-
-5.  **Open the application:**
-    -   Visit [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Project Structure
-
--   `/app`: Main application routes and pages
-    -   `/`: Dashboard with Donate/Request buttons
-    -   `/donate`: Donation page (Under Construction)
-    -   `/request`: Relief request page (Under Construction)
--   `/components`: Reusable UI components
-    -   `Providers.tsx`: Authentication and context providers
--   `/public`: Static assets
-
-## Tempo Network & Smart Contract
-
-This project is deployed on the **Tempo Testnet (Moderato)**.
-
--   **Chain ID:** 42431
--   **RPC URL:** `https://rpc.moderato.tempo.xyz`
--   **Currency:** USD (pathUSD)
--   **Vault Contract Address:** `0x0b3012EdaA34872d536CeE2f80D4BfFD6e854B6A`
--   **pathUSD Token Address:** `0x20C0000000000000000000000000000000000000`
-
-The vault contract manages community donations and is integrated with our AI verification system for secure withdrawals.
-
-## Team
-
--   **Developer Suhas**: Backend, L1 Integration, Identity
--   **Developer Susmitha**: Frontend, Camera Integration, AI Auditor
+## 🏁 Team
+- **Suhas Dasari**: High-Throughput Infrastructure, L1 Parallelism, Identity
+- **Susmitha Gurram**: AI Audit Engineering, Real-time Verification, Frontend UX
