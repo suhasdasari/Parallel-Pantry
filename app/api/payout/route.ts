@@ -60,11 +60,12 @@ export async function POST(req: NextRequest) {
             message: "Relief request verified and queued for the next Relief Round."
         });
 
-    } catch (error: any) {
-        console.error("Payout queuing error:", error);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Payout queuing error:", message);
         return NextResponse.json({
             error: "Failed to queue payout",
-            details: error.message
+            details: message
         }, { status: 500 });
     }
 }

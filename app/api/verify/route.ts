@@ -65,9 +65,10 @@ export async function POST(req: NextRequest) {
                 ]);
 
                 if (result) break; // Success!
-            } catch (err: any) {
-                console.warn(`[AI Auditor] ${modelName} failed: ${err.message}`);
-                lastError = err;
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
+                console.warn(`[AI Auditor] ${modelName} failed: ${message}`);
+                lastError = err instanceof Error ? err : new Error(message);
             }
         }
 
@@ -99,10 +100,11 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json(analysis);
-    } catch (error: any) {
-        console.error("Error in AI Auditor:", error);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Error in AI Auditor:", message);
         return NextResponse.json(
-            { error: error.message || "Internal Server Error" },
+            { error: message || "Internal Server Error" },
             { status: 500 }
         );
     }

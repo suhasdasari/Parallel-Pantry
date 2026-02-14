@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, createWalletClient, http, parseUnits, stringToHex } from "viem";
+import { createWalletClient, http, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { tempoModerato } from "@/lib/tempo-chain";
 import { tempoActions } from "viem/tempo";
 import { VAULT_ABI, VAULT_ADDRESS, PATH_USD_DECIMALS } from "@/lib/contracts";
 import { getQueue, clearQueue, recordClaim } from "@/lib/payout-store";
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
     try {
         const queue = getQueue();
 
@@ -61,13 +61,14 @@ export async function POST(req: NextRequest) {
                     nonceKey,
                     // Tempo-specific: include on-chain memo
                     memo: memoText,
-                } as any);
+                } as Parameters<typeof walletClient.writeContract>[0]);
 
                 recordClaim(payout.recipientAddress);
                 return { success: true, hash, recipient: payout.recipientAddress, amount, memo: memoText };
-            } catch (err: any) {
-                console.error(`[Lane ${nonceKey}] Failed:`, err.message);
-                return { success: false, error: err.message, recipient: payout.recipientAddress };
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
+                console.error(`[Lane ${nonceKey}] Failed:`, message);
+                return { success: false, error: message, recipient: payout.recipientAddress };
             }
         });
 
@@ -86,11 +87,12 @@ export async function POST(req: NextRequest) {
             message: `Processed ${successfulCount}/${queue.length} dynamic distributions with on-chain memos.`
         });
 
-    } catch (error: any) {
-        console.error("Batch payout system error:", error);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Batch payout system error:", message);
         return NextResponse.json({
             error: "Failed to process batch payout",
-            details: error.message
+            details: message
         }, { status: 500 });
     }
 }
