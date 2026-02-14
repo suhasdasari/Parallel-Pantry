@@ -10,7 +10,7 @@ import confetti from "canvas-confetti";
 interface RequestModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: (data: { image: string; email: string; status: "approved" | "pending" | "rejected"; score: number; reason: string }) => void;
+    onSuccess: (data: { image: string; email: string; status: "approved" | "pending" | "rejected"; score: number; reason: string; payoutAmount?: number }) => void;
 }
 
 type VerificationStatus = "approved" | "pending" | "rejected";
