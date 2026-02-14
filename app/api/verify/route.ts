@@ -24,23 +24,16 @@ export async function POST(req: NextRequest) {
         // Clean base64: Remove data URL prefix if present
         const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
 
-        // --- Robust Model Fallback ---
-        // Trying multiple versions to avoid the persistent 404 and region-lock issues
+        // --- AI Auditor Race Mode ---
+        // Fire requests to all models simultaneously and return the fastest successful result.
+        // This targets the 2-3 second response goal by eliminating sequential fallback lag.
         const modelsToTry = [
             "gemini-1.5-flash",
             "gemini-1.5-flash-8b",
             "gemini-1.5-flash-latest"
         ];
 
-        let result = null;
-        let lastError = null;
-
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`[AI Auditor] Trying model: ${modelName}...`);
-                const model = genAI.getGenerativeModel({ model: modelName });
-
-                const prompt = `You are the ParallelPantry Auditor. Analyze the photo for visual markers of financial distress (empty fridge, gas gauge at empty, utility final notice, empty pantry). 
+        const prompt = `You are the ParallelPantry Auditor. Analyze the photo for visual markers of financial distress (empty fridge, gas gauge at empty, utility final notice, empty pantry). 
     
     Dynamic Payout Rules:
     1. Score 0-100 based on distress evidence.
@@ -54,7 +47,11 @@ export async function POST(req: NextRequest) {
     {"score": number, "reason": "string", "urgency": "low" | "medium" | "high", "payoutAmount": number}
     Do not include markdown formatting like \`\`\`json. Just return the raw JSON object.`;
 
-                result = await model.generateContent([
+        const auditRace = modelsToTry.map(async (modelName) => {
+            try {
+                console.log(`[AI Auditor Race] Starting: ${modelName}...`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent([
                     prompt,
                     {
                         inlineData: {
@@ -63,18 +60,17 @@ export async function POST(req: NextRequest) {
                         },
                     },
                 ]);
-
-                if (result) break; // Success!
+                console.log(`[AI Auditor Race] WINNER: ${modelName} responded first!`);
+                return result;
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : String(err);
-                console.warn(`[AI Auditor] ${modelName} failed: ${message}`);
-                lastError = err instanceof Error ? err : new Error(message);
+                console.warn(`[AI Auditor Race] ${modelName} failed or was slow: ${message}`);
+                throw err; // Rethrow so Promise.any knows this lane failed
             }
-        }
+        });
 
-        if (!result) {
-            throw new Error(`All Gemini models failed. Last error: ${lastError?.message}`);
-        }
+        // Promise.any returns the first successfully fulfilled promise
+        const result = await Promise.any(auditRace);
 
         const response = await result.response;
         const text = response.text();
