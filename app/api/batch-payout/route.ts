@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createWalletClient, http, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { tempoModerato } from "@/lib/tempo-chain";
@@ -6,7 +6,7 @@ import { tempoActions } from "viem/tempo";
 import { VAULT_ABI, VAULT_ADDRESS, PATH_USD_DECIMALS } from "@/lib/contracts";
 import { getQueue, clearQueue, recordClaim } from "@/lib/payout-store";
 
-export async function POST(_req: NextRequest) {
+export async function POST() {
     try {
         const queue = getQueue();
 
