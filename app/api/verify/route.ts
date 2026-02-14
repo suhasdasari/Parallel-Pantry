@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
         // Remove the data URL prefix if present (e.g., "data:image/jpeg;base64,")
         const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
 
-        // Changed to flash for better stability and speed
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // Changed to flash-latest for better availability
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
         const prompt = `You are the ParallelPantry Auditor. Analyze the photo for visual markers of financial distress (empty fridge, gas gauge at empty, utility final notice, empty pantry). 
     

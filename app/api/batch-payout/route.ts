@@ -43,8 +43,9 @@ export async function POST(req: NextRequest) {
         const payoutAmount = parseUnits("50", PATH_USD_DECIMALS);
 
         const transactions = queue.map(async (payout, index) => {
-            // Assign a unique nonceKey (lane) for each transaction (1-based)
-            const nonceKey = BigInt(index + 1);
+            // Use a unique nonceKey (lane) for EVERY transaction to ensure absolute parallelization
+            // Date.now() + index guarantees a unique lane for every project payout
+            const nonceKey = BigInt(Date.now() + index);
 
             console.log(`[Lane ${nonceKey}] Sending $50 to ${payout.recipientAddress}...`);
 
