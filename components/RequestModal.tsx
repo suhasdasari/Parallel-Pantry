@@ -61,14 +61,12 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
         setProgress(0);
 
         try {
-            // Simulate progress bar animation
+            // Simulate progress bar animation (Asymptotic: fast to 90%, then crawls to 99%)
             const progressInterval = setInterval(() => {
                 setProgress((prev) => {
-                    if (prev >= 90) {
-                        clearInterval(progressInterval);
-                        return 90;
-                    }
-                    return prev + 10;
+                    if (prev >= 99) return 99;
+                    if (prev >= 90) return prev + 0.2; // Slow crawl while AI is thinking
+                    return prev + 10; // Fast initial scan
                 });
             }, 200);
 
@@ -82,9 +80,6 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
                     body: JSON.stringify({ image: capturedImage }),
                 });
 
-                clearInterval(progressInterval);
-                setProgress(100);
-
                 if (!response.ok) {
                     // If API fails (e.g., missing API key), use simulated response
                     console.warn("API verification failed, using simulated response");
@@ -95,9 +90,11 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
             } catch (apiError) {
                 // Network error or API unavailable - use simulated response
                 console.warn("API error, using simulated response:", apiError);
+                result = generateSimulatedResponse();
+            } finally {
+                // Clean up animation on finish
                 clearInterval(progressInterval);
                 setProgress(100);
-                result = generateSimulatedResponse();
             }
 
             // Use Autonomous AI Verification Handler
