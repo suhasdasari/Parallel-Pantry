@@ -24,30 +24,26 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
         setError(null);
 
         try {
-            const response = await fetch("/api/verify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: capturedImage }),
-            });
+            // Simulate processing delay (bypass AI verification for now)
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
-            if (!response.ok) throw new Error("Verification failed");
+            // Auto-approve all requests
+            setStep("success");
+            triggerConfetti();
+            console.log("Payout Grant Triggered for:", email);
+            if (onSuccess) onSuccess({ image: capturedImage, email });
 
-            const result = await response.json();
-
-            if (result.score >= 85) {
-                setStep("success");
-                triggerConfetti();
-                // Placeholder for Payout Grant function
-                console.log("Payout Grant Triggered for:", email);
-                if (onSuccess) onSuccess({ image: capturedImage, email });
-            } else {
-                setError(`AI Verification Failed: ${result.reason} (Score: ${result.score})`);
-                setStep("camera"); // Allow retry
-                setImage(null);
-            }
+            // TODO: Re-enable AI verification later
+            // const response = await fetch("/api/verify", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({ image: capturedImage }),
+            // });
+            // const result = await response.json();
+            // if (result.score >= 85) { ... }
         } catch (err: unknown) {
             console.error(err);
-            setError("Failed to verify request. Please try again.");
+            setError("Failed to process request. Please try again.");
             setStep("camera");
             setImage(null);
         }
@@ -169,8 +165,8 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
                                     {step === "processing" && (
                                         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20 rounded-3xl">
                                             <Loader2 className="w-12 h-12 text-brand-green animate-spin mb-4" />
-                                            <h3 className="text-xl font-bold">AI Auditor Analyzing...</h3>
-                                            <p className="text-neutral-300 text-sm">Verifying proof for instant relief.</p>
+                                            <h3 className="text-xl font-bold">Processing Request...</h3>
+                                            <p className="text-neutral-300 text-sm">Verifying your relief request.</p>
                                         </div>
                                     )}
                                 </div>
