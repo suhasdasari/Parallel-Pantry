@@ -12,7 +12,6 @@ export interface PayoutRequest {
 
 const QUEUE_FILE = path.join(process.cwd(), "payout-queue.json");
 const CLAIMS_FILE = path.join(process.cwd(), "payout-claims.json");
-const LOCK_FILE = path.join(process.cwd(), "payout-batch.lock");
 
 export function getQueue(): PayoutRequest[] {
     try {
@@ -45,25 +44,6 @@ export function clearQueue(): void {
     }
 }
 
-/**
- * Atomically read and clear the queue to prevent double-processing
- */
-export function popQueue(): PayoutRequest[] {
-    try {
-        if (!fs.existsSync(QUEUE_FILE)) return [];
-
-        // Simple thread-safe-ish check (for local dev)
-        const queue = getQueue();
-        if (queue.length > 0) {
-            clearQueue();
-        }
-        return queue;
-    } catch (error) {
-        console.error("Error popping payout queue:", error);
-        return [];
-    }
-}
-
 export function getClaims(): Record<string, number> {
     try {
         if (!fs.existsSync(CLAIMS_FILE)) {
@@ -90,17 +70,4 @@ export function recordClaim(address: string): void {
 export function getUserClaimCount(address: string): number {
     const claims = getClaims();
     return claims[address.toLowerCase()] || 0;
-}
-
-// Simple lock mechanism
-export function isLocked(): boolean {
-    return fs.existsSync(LOCK_FILE);
-}
-
-export function setLock(locked: boolean): void {
-    if (locked) {
-        fs.writeFileSync(LOCK_FILE, "locked");
-    } else if (fs.existsSync(LOCK_FILE)) {
-        fs.unlinkSync(LOCK_FILE);
-    }
 }

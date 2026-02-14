@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-
 export async function POST(req: NextRequest) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -25,15 +24,16 @@ export async function POST(req: NextRequest) {
         // Remove the data URL prefix if present (e.g., "data:image/jpeg;base64,")
         const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
 
-        // Changed to flash-latest for better availability
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        // Reverting to base gemini-1.5-flash as it was most stable
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `You are the ParallelPantry Auditor. Analyze the photo for visual markers of financial distress (empty fridge, gas gauge at empty, utility final notice, empty pantry). 
     
     Rules:
-    1. If it is a stock photo, screenshot, or unrelated selfie, score 0.
-    2. If it shows clear evidence of immediate need (e.g., completely empty fridge, disconnection notice), score 95.
-    3. Be strict but compassionate. Look for genuine markers of need.
+    1. If it is a stock photo or obvious screenshot, score 0.
+    2. Genuine photos of the user showing extreme sadness, crying, or despair are valid markers of distress and should be scored 90+.
+    3. If it shows clear evidence of immediate need (e.g., completely empty fridge, disconnection notice), score 95.
+    4. Be strict but compassionate. 
     
     Return ONLY valid JSON with this structure: 
     {"score": number, "reason": "string", "urgency": "low" | "medium" | "high"}
