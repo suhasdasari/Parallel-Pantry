@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { X, CheckCircle, Mail, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import CameraCapture from "./CameraCapture";
 import confetti from "canvas-confetti";
 
@@ -25,6 +26,7 @@ const THRESHOLD_PASS = 85;
 const THRESHOLD_RETRY = 50;
 
 export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModalProps) {
+    const { wallets } = useWallets();
     const [step, setStep] = useState<"email" | "camera" | "processing" | "result">("email");
     const [email, setEmail] = useState("");
     const [image, setImage] = useState<string | null>(null);
@@ -32,6 +34,7 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
     const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
     const [progress, setProgress] = useState(0);
 
+    const wallet = wallets[0];
 
     // Autonomous AI Verification Handler
     const processAIScore = (result: { score: number; reason: string }): EvaluationResult => {
@@ -115,9 +118,24 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
             }
 
             // If approved, trigger confetti and payout
-            if (evaluation.status === "approved") {
+            if (evaluation.status === "approved" && wallet?.address) {
                 triggerConfetti();
                 console.log("Payout Grant Triggered for:", email);
+
+                // Trigger Backend Payout
+                try {
+                    await fetch("/api/payout", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            recipientAddress: wallet.address,
+                            score: evaluation.score,
+                            reason: evaluation.reason
+                        })
+                    });
+                } catch (payoutErr) {
+                    console.error("Payout trigger failed:", payoutErr);
+                }
             }
         } catch (err: unknown) {
             console.error(err);

@@ -48,6 +48,16 @@ export const VAULT_ABI = [
         type: "function",
     },
     {
+        inputs: [
+            { internalType: "address", name: "recipient", type: "address" },
+            { internalType: "uint256", name: "amount", type: "uint256" },
+        ],
+        name: "withdraw",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function",
+    },
+    {
         anonymous: false,
         inputs: [
             { indexed: true, internalType: "address", name: "donor", type: "address" },

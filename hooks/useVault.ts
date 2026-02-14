@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { VAULT_ADDRESS, VAULT_ABI, PATH_USD_ADDRESS, PATH_USD_ABI, PATH_USD_DECIMALS } from "@/lib/contracts";
 import { createPublicClient, createWalletClient, custom, http, formatUnits } from "viem";
-import { tempoTestnet } from "@/lib/tempo-chain";
+import { tempoModerato } from "@/lib/tempo-chain";
 
 export function useVault() {
     const { ready, authenticated } = usePrivy();
@@ -23,7 +23,7 @@ export function useVault() {
             const provider = await wallet.getEthereumProvider();
 
             const publicClient = createPublicClient({
-                chain: tempoTestnet,
+                chain: tempoModerato,
                 transport: custom(provider),
             });
 
@@ -46,7 +46,7 @@ export function useVault() {
             // Try to switch to Tempo network
             await provider.request({
                 method: "wallet_switchEthereumChain",
-                params: [{ chainId: `0x${tempoTestnet.id.toString(16)}` }], // 0xa5dd in hex
+                params: [{ chainId: `0x${tempoModerato.id.toString(16)}` }], // 0xa5dd in hex
             });
             return true;
         } catch (switchError: any) {
@@ -57,11 +57,11 @@ export function useVault() {
                         method: "wallet_addEthereumChain",
                         params: [
                             {
-                                chainId: `0x${tempoTestnet.id.toString(16)}`,
-                                chainName: tempoTestnet.name,
-                                nativeCurrency: tempoTestnet.nativeCurrency,
-                                rpcUrls: [tempoTestnet.rpcUrls.default.http[0]],
-                                blockExplorerUrls: [tempoTestnet.blockExplorers.default.url],
+                                chainId: `0x${tempoModerato.id.toString(16)}`,
+                                chainName: tempoModerato.name,
+                                nativeCurrency: tempoModerato.nativeCurrency,
+                                rpcUrls: [tempoModerato.rpcUrls.default.http[0]],
+                                blockExplorerUrls: [tempoModerato.blockExplorers.default.url],
                             },
                         ],
                     });
@@ -98,8 +98,8 @@ export function useVault() {
             const currentChainId = parseInt(chainId, 16);
 
             // If not on Tempo, switch networks
-            if (currentChainId !== tempoTestnet.id) {
-                console.log(`Switching from chain ${currentChainId} to Tempo (${tempoTestnet.id})`);
+            if (currentChainId !== tempoModerato.id) {
+                console.log(`Switching from chain ${currentChainId} to Tempo (${tempoModerato.id})`);
                 await switchToTempoNetwork(provider);
                 // Wait a bit for the network switch to complete
                 await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -117,7 +117,7 @@ export function useVault() {
 
             const walletClient = createWalletClient({
                 account: address as `0x${string}`,
-                chain: tempoTestnet,
+                chain: tempoModerato,
                 transport: custom(provider),
             });
 

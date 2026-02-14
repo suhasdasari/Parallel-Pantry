@@ -18,6 +18,31 @@ export default function Home() {
   const { login, authenticated, ready } = usePrivy();
   const { signupWithPasskey } = useSignupWithPasskey();
 
+  // Load requests from localStorage on mount
+  useEffect(() => {
+    const savedRequests = localStorage.getItem("parallel-pantry-requests");
+    if (savedRequests) {
+      try {
+        const parsed = JSON.parse(savedRequests);
+        // Revive dates
+        const revived = parsed.map((req: any) => ({
+          ...req,
+          timestamp: new Date(req.timestamp)
+        }));
+        setRequests(revived);
+      } catch (e) {
+        console.error("Failed to parse saved requests", e);
+      }
+    }
+  }, []);
+
+  // Save requests to localStorage whenever they change
+  useEffect(() => {
+    if (requests.length > 0) {
+      localStorage.setItem("parallel-pantry-requests", JSON.stringify(requests));
+    }
+  }, [requests]);
+
   const handlePayoutSuccess = ({ image, email, status, score, reason }: { image: string; email: string; status: "approved" | "pending" | "rejected"; score: number; reason: string }) => {
     // Add new request to the feed (approved, pending, or rejected)
     const newRequest: ImpactRequest = {

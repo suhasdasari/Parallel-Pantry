@@ -1,6 +1,6 @@
 import { defineChain } from "viem";
 
-export const tempoTestnet = defineChain({
+export const tempoModerato = defineChain({
     id: 42431,
     name: "Tempo Testnet (Moderato)",
     nativeCurrency: {
