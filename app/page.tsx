@@ -25,7 +25,7 @@ export default function Home() {
       try {
         const parsed = JSON.parse(savedRequests);
         // Revive dates
-        const revived = parsed.map((req: any) => ({
+        const revived: ImpactRequest[] = parsed.map((req: ImpactRequest & { timestamp: string }) => ({
           ...req,
           timestamp: new Date(req.timestamp)
         }));
@@ -43,7 +43,7 @@ export default function Home() {
     }
   }, [requests]);
 
-  const handlePayoutSuccess = ({ image, email, status, score, reason, payoutAmount }: { image: string; email: string; status: "approved" | "pending" | "rejected"; score: number; reason: string; payoutAmount?: number }) => {
+  const handlePayoutSuccess = ({ image, status, score, reason, payoutAmount }: { image: string; status: "approved" | "pending" | "rejected"; score: number; reason: string; payoutAmount?: number }) => {
     // Add new request to the feed (approved, pending, or rejected)
     const newRequest: ImpactRequest = {
       id: Date.now().toString(),

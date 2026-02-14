@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import DonationModal from "@/components/DonationModal";
-import { HandHeart, Users, Heart, Vault } from "lucide-react";
+import { HandHeart, Users, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { useVault } from "@/hooks/useVault";
 

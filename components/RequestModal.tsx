@@ -3,14 +3,15 @@
 import React, { useState } from "react";
 import { X, CheckCircle, Mail, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useWallets } from "@privy-io/react-auth";
+import Image from "next/image";
 import CameraCapture from "./CameraCapture";
 import confetti from "canvas-confetti";
 
 interface RequestModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: (data: { image: string; email: string; status: "approved" | "pending" | "rejected"; score: number; reason: string; payoutAmount?: number }) => void;
+    onSuccess: (data: { image: string; status: "approved" | "pending" | "rejected"; score: number; reason: string; payoutAmount?: number }) => void;
 }
 
 type VerificationStatus = "approved" | "pending" | "rejected";
@@ -111,12 +112,11 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
             if (onSuccess) {
                 onSuccess({
                     image: capturedImage,
-                    email,
                     status: evaluation.status,
                     score: evaluation.score,
                     reason: evaluation.reason,
                     payoutAmount: evaluation.payoutAmount, // New dynamic field
-                } as any);
+                });
             }
 
             // If approved, trigger confetti and payout
@@ -315,7 +315,7 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
                                                 className="w-24 h-24 bg-brand-green/20 rounded-full flex items-center justify-center mx-auto overflow-hidden border-2 border-brand-green relative"
                                             >
                                                 {image ? (
-                                                    <img src={image} alt="Approved" className="w-full h-full object-cover" />
+                                                    <Image src={image} alt="Approved" className="w-full h-full object-cover" fill unoptimized />
                                                 ) : (
                                                     <CheckCircle className="w-12 h-12 text-brand-green" />
                                                 )}

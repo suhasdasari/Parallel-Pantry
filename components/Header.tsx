@@ -10,7 +10,7 @@ import Link from "next/link";
 import ReliefTimer from "./ReliefTimer";
 
 export default function Header() {
-    const { logout, authenticated, user } = usePrivy();
+    const { logout, authenticated } = usePrivy();
     const { wallets } = useWallets();
     const [balance, setBalance] = useState<string>("0.00");
     const [truncatedAddress, setTruncatedAddress] = useState<string>("");
