@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, http, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { tempoModerato } from "@/lib/tempo-chain";
+import { tempoActions } from "viem/tempo";
 import { VAULT_ABI, VAULT_ADDRESS, PATH_USD_DECIMALS } from "@/lib/contracts";
-import { getQueue, clearQueue } from "@/lib/payout-store";
+import { getQueue, clearQueue, recordClaim } from "@/lib/payout-store";
 
 export async function POST(req: NextRequest) {
     try {
@@ -29,11 +30,12 @@ export async function POST(req: NextRequest) {
             transport: http(),
         });
 
+        // Extend with Tempo actions for 2D Nonce support
         const walletClient = createWalletClient({
             account,
             chain: tempoModerato,
             transport: http(),
-        });
+        }).extend(tempoActions());
 
         console.log(`Processing Batch Payout of ${queue.length} requests using 2D nonces...`);
 
@@ -47,7 +49,6 @@ export async function POST(req: NextRequest) {
             console.log(`[Lane ${nonceKey}] Sending $50 to ${payout.recipientAddress}...`);
 
             try {
-                // @ts-ignore - nonceKey is a specific Tempo property in Viem's Tempo extension
                 const hash = await walletClient.writeContract({
                     address: VAULT_ADDRESS as `0x${string}`,
                     abi: VAULT_ABI,
@@ -55,6 +56,9 @@ export async function POST(req: NextRequest) {
                     args: [payout.recipientAddress as `0x${string}`, payoutAmount],
                     nonceKey, // Multi-Dimensional Nonce (Parallel Execution)
                 });
+
+                // Record the claim for this user
+                recordClaim(payout.recipientAddress);
 
                 return { success: true, hash, recipient: payout.recipientAddress, lane: index + 1 };
             } catch (err: any) {

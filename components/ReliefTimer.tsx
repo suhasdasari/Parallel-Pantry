@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Timer, Zap } from "lucide-react";
 
 export default function ReliefTimer() {
-    // 10 minute cycle (600 seconds)
-    const CYCLE_TIME = 600;
+    // 1 minute cycle (60 seconds)
+    const CYCLE_TIME = 60;
     const [timeLeft, setTimeLeft] = useState(CYCLE_TIME);
     const [isProcessing, setIsProcessing] = useState(false);
 

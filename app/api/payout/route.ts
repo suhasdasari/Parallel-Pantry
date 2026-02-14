@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addToQueue } from "@/lib/payout-store";
+import { addToQueue, getUserClaimCount, getQueue } from "@/lib/payout-store";
 
 export async function POST(req: NextRequest) {
     try {
@@ -11,7 +11,25 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        // 2. AI Threshold Check (Strict)
+        // 2. Claim Limit Check
+        const maxClaims = process.env.MAX_CLAIMS_PER_USER || "unlimited";
+        if (maxClaims !== "unlimited") {
+            const currentClaims = getUserClaimCount(recipientAddress);
+            const limit = parseInt(maxClaims);
+
+            // Also check if they already have one in the queue
+            const queue = getQueue();
+            const alreadyInQueue = queue.some(q => q.recipientAddress.toLowerCase() === recipientAddress.toLowerCase());
+
+            if (currentClaims >= limit || alreadyInQueue) {
+                return NextResponse.json({
+                    error: "Claim limit reached",
+                    details: `You have already claimed your maximum entitlement (${limit} relief grants).`
+                }, { status: 403 });
+            }
+        }
+
+        // 3. AI Threshold Check (Strict)
         if (score < 85) {
             return NextResponse.json({
                 error: "Score too low for automatic payout",
@@ -19,7 +37,7 @@ export async function POST(req: NextRequest) {
             }, { status: 403 });
         }
 
-        // 3. Queue the Payout
+        // 4. Queue the Payout
         const payoutRequest = {
             id: Date.now().toString(),
             recipientAddress,
