@@ -18,13 +18,16 @@ export default function Home() {
   const { login, authenticated, ready } = usePrivy();
   const { signupWithPasskey } = useSignupWithPasskey();
 
-  const handlePayoutSuccess = ({ image }: { image: string; email: string }) => {
-    // Add new successful request to the feed
+  const handlePayoutSuccess = ({ image, email, status, score, reason }: { image: string; email: string; status: "approved" | "pending" | "rejected"; score: number; reason: string }) => {
+    // Add new request to the feed (approved, pending, or rejected)
     const newRequest: ImpactRequest = {
       id: Date.now().toString(),
       imageSrc: image,
       timestamp: new Date(),
-      verified: true,
+      verified: status === "approved",
+      status,
+      score,
+      reason,
     };
 
     setRequests((prev) => [newRequest, ...prev]);
