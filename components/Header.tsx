@@ -7,6 +7,7 @@ import { PATH_USD_ABI, PATH_USD_ADDRESS, PATH_USD_DECIMALS } from "@/lib/contrac
 import { tempoModerato } from "@/lib/tempo-chain";
 import { LogOut, Wallet } from "lucide-react";
 import Link from "next/link";
+import ReliefTimer from "./ReliefTimer";
 
 export default function Header() {
     const { logout, authenticated, user } = usePrivy();
@@ -61,6 +62,10 @@ export default function Header() {
                 </Link>
 
                 <div className="flex items-center gap-4">
+                    <ReliefTimer />
+
+                    <div className="h-8 w-[1px] bg-neutral-800 hidden md:block" />
+
                     <div className="hidden md:flex flex-col items-end">
                         <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">Your Balance</span>
                         <span className="text-brand-green font-mono font-bold">{balance} pathUSD</span>

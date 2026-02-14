@@ -321,7 +321,7 @@ export default function RequestModal({ isOpen, onClose, onSuccess }: RequestModa
                                             <div className="space-y-2">
                                                 <h2 className="text-3xl font-bold text-white">Relief Approved!</h2>
                                                 <p className="text-neutral-400">
-                                                    Your request has been verified. <span className="text-brand-green font-bold">$50.00</span> is being sent to your wallet.
+                                                    Your request has been verified. <span className="text-brand-green font-bold">$50.00</span> is queued for the next Relief Round.
                                                 </p>
                                                 <div className="mt-4 p-4 bg-neutral-800/50 rounded-xl text-left">
                                                     <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">AI Verification Reason</p>

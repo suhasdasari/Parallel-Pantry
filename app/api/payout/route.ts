@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, createWalletClient, http, parseUnits } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { tempoModerato } from "@/lib/tempo-chain";
-import { VAULT_ABI, VAULT_ADDRESS, PATH_USD_DECIMALS } from "@/lib/contracts";
+import { addToQueue } from "@/lib/payout-store";
 
 export async function POST(req: NextRequest) {
     try {
@@ -22,52 +19,30 @@ export async function POST(req: NextRequest) {
             }, { status: 403 });
         }
 
-        // 3. AI Agent Configuration
-        const privateKey = process.env.AI_AGENT_PRIVATE_KEY;
-        if (!privateKey) {
-            console.error("Missing AI_AGENT_PRIVATE_KEY environment variable");
-            return NextResponse.json({ error: "Server payout configuration missing" }, { status: 500 });
-        }
+        // 3. Queue the Payout
+        const payoutRequest = {
+            id: Date.now().toString(),
+            recipientAddress,
+            amount: "50",
+            score,
+            reason,
+            timestamp: Date.now()
+        };
 
-        const account = privateKeyToAccount(privateKey as `0x${string}`);
+        addToQueue(payoutRequest);
 
-        const publicClient = createPublicClient({
-            chain: tempoModerato,
-            transport: http(),
-        });
-
-        const walletClient = createWalletClient({
-            account,
-            chain: tempoModerato,
-            transport: http(),
-        });
-
-        // 4. Execute Payout ($50 PathUSD)
-        const payoutAmount = parseUnits("50", PATH_USD_DECIMALS);
-
-        console.log(`Executing payout of 50 PathUSD to ${recipientAddress} (Score: ${score})...`);
-
-        const hash = await walletClient.writeContract({
-            address: VAULT_ADDRESS as `0x${string}`,
-            abi: VAULT_ABI,
-            functionName: "withdraw",
-            args: [recipientAddress as `0x${string}`, payoutAmount],
-        });
-
-        console.log("Payout transaction hash:", hash);
+        console.log(`Queued payout of 50 PathUSD for ${recipientAddress} (Score: ${score})`);
 
         return NextResponse.json({
             success: true,
-            transactionHash: hash,
-            amount: 50,
-            recipient: recipientAddress,
-            message: "Relief funds distributed successfully via Tempo L1."
+            status: "queued",
+            message: "Relief request verified and queued for the next Relief Round."
         });
 
     } catch (error: any) {
-        console.error("Payout system error:", error);
+        console.error("Payout queuing error:", error);
         return NextResponse.json({
-            error: "Failed to process payout",
+            error: "Failed to queue payout",
             details: error.message
         }, { status: 500 });
     }
