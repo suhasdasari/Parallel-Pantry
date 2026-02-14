@@ -11,6 +11,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@privy-io/react-auth": "^3.13.1",
+    "@tanstack/react-query": "^5.90.21",
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
@@ -26,16 +27,21 @@
     "tailwind-merge": "^3.4.0",
     "tempo.ts": "^0.14.0",
     "viem": "^2.45.3",
+    "wagmi": "^3.4.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@openzeppelin/contracts": "^5.4.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
+    "hardhat": "^3.1.8",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
-  }
+  },
+  "type": "module"
 }

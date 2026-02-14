@@ -1,0 +1,12 @@
+{
+    "network": "tempo-testnet",
+    "chainId": 42429,
+    "vaultAddress": "0x935602ED352b287247053C2aE9Ab97C4e431CF35",
+    "pathUSDAddress": "0x20C0000000000000000000000000000000000000",
+    "aiAgentAddress": "0xD88b67ca80fCBD126fF0405F0de899911d78eb78",
+    "owner": "0xD88b67ca80fCBD126fF0405F0de899911d78eb78",
+    "deployedAt": "2026-02-14T03:09:00Z",
+    "transactionHash": "0xf27638a457e8e1dbce461882d784eeb817b81e2a88ba9a9a118d2d50a49669cf",
+    "blockNumber": 4913252,
+    "explorerUrl": "https://explore.tempo.xyz/address/0x935602ED352b287247053C2aE9Ab97C4e431CF35"
+}

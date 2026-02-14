@@ -4,13 +4,18 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import DonationModal from "@/components/DonationModal";
-import { HandHeart, Users, Heart } from "lucide-react";
+import { HandHeart, Users, Heart, Vault } from "lucide-react";
 import { motion } from "framer-motion";
+import { useVault } from "@/hooks/useVault";
+import { formatUnits } from "viem";
+
+
 
 export default function DonatePage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const router = useRouter();
     const { authenticated, ready } = usePrivy();
+    const { vaultBalance } = useVault();
 
     // Redirect to home if not authenticated
     useEffect(() => {
@@ -30,6 +35,11 @@ export default function DonatePage() {
             </div>
         );
     }
+
+    // Format vault balance for display
+    const formattedBalance = vaultBalance
+        ? `$${parseFloat(formatUnits(BigInt(vaultBalance), 18)).toFixed(2)}`
+        : "$0.00";
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -66,10 +76,10 @@ export default function DonatePage() {
                     transition={{ delay: 0.2, duration: 0.5 }}
                     className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto"
                 >
-                    {/* Recent Impact Stats (Mock) */}
+                    {/* Vault Balance */}
                     <div className="bg-neutral-900/50 border border-neutral-800 p-6 rounded-2xl flex flex-col items-center gap-2 backdrop-blur-sm hover:bg-neutral-900/80 transition-colors">
-                        <div className="text-3xl font-bold text-white">$12,450</div>
-                        <div className="text-sm text-neutral-500 uppercase tracking-widest font-semibold">Total Raised</div>
+                        <div className="text-3xl font-bold text-brand-green">{formattedBalance}</div>
+                        <div className="text-sm text-neutral-500 uppercase tracking-widest font-semibold">Vault Balance</div>
                     </div>
 
                     <div className="bg-neutral-900/50 border border-neutral-800 p-6 rounded-2xl flex flex-col items-center gap-2 backdrop-blur-sm hover:bg-neutral-900/80 transition-colors">

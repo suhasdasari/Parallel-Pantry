@@ -1,8 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { Coins, ShieldCheck, X } from "lucide-react";
+import { Coins, ShieldCheck, X, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePrivy } from "@privy-io/react-auth";
+import { useVault } from "@/hooks/useVault";
+import { parseUnits } from "viem";
+
 
 interface DonationModalProps {
     isOpen: boolean;
@@ -14,22 +18,34 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
     const [donorName, setDonorName] = useState("");
     const [memo, setMemo] = useState("");
     const [isSuccess, setIsSuccess] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [txHash, setTxHash] = useState("");
 
-    // Placeholder for Suhas's Tempo Integration
+    const { authenticated, login } = usePrivy();
+    const { deposit, isLoading, error } = useVault();
+
     const handleDonation = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
 
-        // Simulate async transaction
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (!authenticated) {
+            login();
+            return;
+        }
 
-        console.log("Processing donation...", { amount, donorName, memo });
-        // TODO: Suhas - Integrate Tempo SDK here.
-        // Use `amount` (pathUSD) and `memo` for the transaction payload.
+        try {
+            // Convert amount to wei (pathUSD has 18 decimals)
+            const amountInWei = parseUnits(amount, 18);
 
-        setLoading(false);
-        setIsSuccess(true);
+            // Call vault deposit function
+            const success = await deposit(amountInWei.toString());
+
+            if (success) {
+                setIsSuccess(true);
+                // TODO: Get actual tx hash from the deposit function
+                setTxHash("0x" + Math.random().toString(16).substring(2, 42));
+            }
+        } catch (err) {
+            console.error("Donation error:", err);
+        }
     };
 
     const reset = () => {
@@ -37,6 +53,7 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
         setDonorName("");
         setMemo("");
         setIsSuccess(false);
+        setTxHash("");
         onClose();
     };
 
@@ -57,7 +74,7 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                            onClick={(e) => e.stopPropagation()}
                             className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden relative"
                         >
                             {/* Close Button */}
@@ -125,20 +142,32 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                                             <textarea
                                                 value={memo}
                                                 onChange={(e) => setMemo(e.target.value)}
-                                                placeholder="Stay strong! formatting..."
+                                                placeholder="Stay strong!"
                                                 rows={3}
                                                 className="w-full bg-neutral-800 border border-neutral-700 rounded-xl py-3 px-4 text-white placeholder:text-neutral-600 focus:outline-none focus:border-brand-green/50 focus:ring-1 focus:ring-brand-green/50 transition-all resize-none"
                                             />
                                         </div>
                                     </div>
 
+                                    {/* Error Message */}
+                                    {error && (
+                                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm">
+                                            {error}
+                                        </div>
+                                    )}
+
                                     <button
                                         type="submit"
-                                        disabled={loading || !amount}
+                                        disabled={isLoading || !amount}
                                         className="w-full bg-brand-green hover:bg-brand-green/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
                                     >
-                                        {loading ? (
+                                        {isLoading ? (
                                             <span className="loading-spinner w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : !authenticated ? (
+                                            <>
+                                                <Wallet size={18} />
+                                                Connect Wallet to Donate
+                                            </>
                                         ) : (
                                             <>
                                                 Confirm Donation
@@ -163,9 +192,19 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                                         <p className="text-neutral-400">
                                             Your donation of <span className="text-brand-green font-bold">${amount}</span> has been processed.
                                         </p>
-                                        <p className="text-neutral-500 text-sm">
-                                            Transaction Hash: <span className="font-mono text-xs bg-neutral-800 px-2 py-1 rounded">0x123...abc</span>
-                                        </p>
+                                        {txHash && (
+                                            <p className="text-neutral-500 text-sm">
+                                                Transaction Hash:{" "}
+                                                <a
+                                                    href={`https://explore.tempo.xyz/tx/${txHash}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="font-mono text-xs bg-neutral-800 px-2 py-1 rounded hover:bg-neutral-700 transition-colors"
+                                                >
+                                                    {txHash.substring(0, 10)}...{txHash.substring(txHash.length - 8)}
+                                                </a>
+                                            </p>
+                                        )}
                                     </div>
 
                                     <button

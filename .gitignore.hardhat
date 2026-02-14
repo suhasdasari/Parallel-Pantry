@@ -1,0 +1,7 @@
+# Hardhat deployment files
+cache/
+artifacts/
+deployment-info.json
+
+# Environment
+.env.tempo
