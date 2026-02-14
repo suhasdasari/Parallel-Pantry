@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
             console.log(`[Lane ${nonceKey}] Sending $50 to ${payout.recipientAddress}...`);
 
             try {
+                // @ts-ignore - nonceKey is a specific Tempo property provided by .extend(tempoActions())
                 const hash = await walletClient.writeContract({
                     address: VAULT_ADDRESS as `0x${string}`,
                     abi: VAULT_ABI,
