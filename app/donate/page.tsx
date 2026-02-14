@@ -1,12 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { usePrivy } from "@privy-io/react-auth";
 import DonationModal from "@/components/DonationModal";
 import { HandHeart, Users, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function DonatePage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const router = useRouter();
+    const { authenticated, ready } = usePrivy();
+
+    // Redirect to home if not authenticated
+    useEffect(() => {
+        if (ready && !authenticated) {
+            router.push("/");
+        }
+    }, [ready, authenticated, router]);
+
+    // Show loading state while checking authentication
+    if (!ready || !authenticated) {
+        return (
+            <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <div className="w-12 h-12 border-4 border-brand-green border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-neutral-400">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 relative overflow-hidden">

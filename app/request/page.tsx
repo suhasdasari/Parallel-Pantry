@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { usePrivy } from "@privy-io/react-auth";
 import CameraCapture from "@/components/CameraCapture";
 import { CheckCircle, AlertTriangle, AlertOctagon } from "lucide-react";
 
@@ -14,6 +16,15 @@ export default function RequestPage() {
     const [result, setResult] = useState<AuditResult | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
+    const { authenticated, ready } = usePrivy();
+
+    // Redirect to home if not authenticated
+    useEffect(() => {
+        if (ready && !authenticated) {
+            router.push("/");
+        }
+    }, [ready, authenticated, router]);
 
     const handleCapture = async (imageSrc: string) => {
         setLoading(true);
@@ -38,6 +49,18 @@ export default function RequestPage() {
             setLoading(false);
         }
     };
+
+    // Show loading state while checking authentication
+    if (!ready || !authenticated) {
+        return (
+            <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <div className="w-12 h-12 border-4 border-brand-amber border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-neutral-400">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (result) {
         return (

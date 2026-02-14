@@ -1,16 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { HelpingHand, Sprout } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { HelpingHand, Sprout, X, KeyRound, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { usePrivy, useSignupWithPasskey } from "@privy-io/react-auth";
 import RequestModal from "@/components/RequestModal";
 import ImpactFeed, { ImpactRequest } from "@/components/ImpactFeed";
 
 export default function Home() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [requests, setRequests] = useState<ImpactRequest[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"donate" | "request" | null>(null);
+
   const router = useRouter();
+  const { login, authenticated, ready } = usePrivy();
+  const { signupWithPasskey } = useSignupWithPasskey();
 
   const handlePayoutSuccess = ({ image }: { image: string; email: string }) => {
     // Add new successful request to the feed
@@ -22,6 +28,40 @@ export default function Home() {
     };
 
     setRequests((prev) => [newRequest, ...prev]);
+  };
+
+  // Handle post-authentication actions
+  useEffect(() => {
+    if (ready && authenticated && pendingAction) {
+      if (pendingAction === "donate") {
+        router.push("/donate");
+      } else if (pendingAction === "request") {
+        setIsRequestModalOpen(true);
+      }
+      setPendingAction(null);
+      setShowAuthModal(false);
+    }
+  }, [ready, authenticated, pendingAction, router]);
+
+  const handleAction = (action: "donate" | "request") => {
+    if (authenticated) {
+      if (action === "donate") {
+        router.push("/donate");
+      } else {
+        setIsRequestModalOpen(true);
+      }
+    } else {
+      setPendingAction(action);
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleLogin = () => {
+    login({ loginMethods: ['passkey'] });
+  };
+
+  const handleSignup = () => {
+    signupWithPasskey();
   };
 
   const containerVariants = {
@@ -74,7 +114,7 @@ export default function Home() {
         >
           {/* Support Button */}
           <button
-            onClick={() => router.push("/donate")}
+            onClick={() => handleAction("donate")}
             className="group relative flex flex-col items-center justify-center gap-6 p-12 rounded-3xl bg-neutral-900 border border-neutral-800 hover:border-brand-green/50 transition-all duration-500 hover:shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)] text-center"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-brand-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
@@ -93,7 +133,7 @@ export default function Home() {
 
           {/* Request Relief Button */}
           <button
-            onClick={() => setIsRequestModalOpen(true)}
+            onClick={() => handleAction("request")}
             className="group relative flex flex-col items-center justify-center gap-6 p-12 rounded-3xl bg-neutral-900 border border-neutral-800 hover:border-brand-amber/50 transition-all duration-500 hover:shadow-[0_0_50px_-12px_rgba(245,158,11,0.3)] text-center"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-brand-amber/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
@@ -121,6 +161,73 @@ export default function Home() {
         </motion.div>
 
       </motion.div>
+
+      {/* Auth Interstitial Modal */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowAuthModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-neutral-800/50 to-transparent pointer-events-none" />
+
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="relative space-y-8">
+                <div className="text-center space-y-2">
+                  <h3 className="text-2xl font-bold text-white">Welcome</h3>
+                  <p className="text-neutral-400">
+                    Secure and instant access with Passkeys.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <button
+                    onClick={handleLogin}
+                    className="w-full group relative flex items-center justify-center gap-3 p-4 rounded-xl bg-white text-black font-semibold hover:bg-neutral-100 transition-all active:scale-[0.98]"
+                  >
+                    <KeyRound className="w-5 h-5" />
+                    <span>Log in with Passkey</span>
+                  </button>
+
+                  <div className="relative flex items-center py-2">
+                    <div className="flex-grow border-t border-neutral-800"></div>
+                    <span className="flex-shrink-0 mx-4 text-neutral-600 text-sm">Or</span>
+                    <div className="flex-grow border-t border-neutral-800"></div>
+                  </div>
+
+                  <button
+                    onClick={handleSignup}
+                    className="w-full group relative flex items-center justify-center gap-3 p-4 rounded-xl bg-neutral-800 text-white font-semibold hover:bg-neutral-700 transition-all border border-neutral-700 active:scale-[0.98]"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                    <span>Create Passkey Account</span>
+                  </button>
+                </div>
+
+                <p className="text-center text-xs text-neutral-500">
+                  By continuing, you agree to our Terms of Service and Privacy Policy.
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <RequestModal
         isOpen={isRequestModalOpen}
