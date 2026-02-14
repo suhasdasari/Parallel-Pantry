@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { VAULT_ADDRESS, VAULT_ABI, PATH_USD_ADDRESS, PATH_USD_ABI } from "@/lib/contracts";
-import { createPublicClient, createWalletClient, custom, http } from "viem";
+import { VAULT_ADDRESS, VAULT_ABI, PATH_USD_ADDRESS, PATH_USD_ABI, PATH_USD_DECIMALS } from "@/lib/contracts";
+import { createPublicClient, createWalletClient, custom, http, formatUnits } from "viem";
 import { tempoTestnet } from "@/lib/tempo-chain";
 
 export function useVault() {
     const { ready, authenticated } = usePrivy();
     const { wallets } = useWallets();
-    const [vaultBalance, setVaultBalance] = useState<string>("0");
+    const [vaultBalance, setVaultBalance] = useState<string>("0.00");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -33,16 +33,57 @@ export function useVault() {
                 functionName: "getBalance",
             });
 
-            setVaultBalance(balance.toString());
+            // Format units using 6 decimals
+            setVaultBalance(formatUnits(balance as bigint, PATH_USD_DECIMALS));
         } catch (err) {
             console.error("Error fetching vault balance:", err);
         }
     };
 
+    // Switch to Tempo network
+    const switchToTempoNetwork = async (provider: any) => {
+        try {
+            // Try to switch to Tempo network
+            await provider.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: `0x${tempoTestnet.id.toString(16)}` }], // 0xa5dd in hex
+            });
+            return true;
+        } catch (switchError: any) {
+            // This error code indicates that the chain has not been added to MetaMask
+            if (switchError.code === 4902) {
+                try {
+                    await provider.request({
+                        method: "wallet_addEthereumChain",
+                        params: [
+                            {
+                                chainId: `0x${tempoTestnet.id.toString(16)}`,
+                                chainName: tempoTestnet.name,
+                                nativeCurrency: tempoTestnet.nativeCurrency,
+                                rpcUrls: [tempoTestnet.rpcUrls.default.http[0]],
+                                blockExplorerUrls: [tempoTestnet.blockExplorers.default.url],
+                            },
+                        ],
+                    });
+                    return true;
+                } catch (addError) {
+                    console.error("Error adding Tempo network:", addError);
+                    throw new Error("Failed to add Tempo network to wallet");
+                }
+            }
+            throw switchError;
+        }
+    };
+
     // Deposit to vault
     const deposit = async (amount: string) => {
-        if (!wallet || !authenticated) {
-            setError("Please connect your wallet first");
+        if (!authenticated) {
+            setError("Please authenticate first");
+            return false;
+        }
+
+        if (!wallet) {
+            setError("Wallet not ready. Please wait a moment and try again.");
             return false;
         }
 
@@ -51,7 +92,28 @@ export function useVault() {
 
         try {
             const provider = await wallet.getEthereumProvider();
-            const [address] = await provider.request({ method: "eth_accounts" });
+
+            // Check current chain
+            const chainId = await provider.request({ method: "eth_chainId" }) as string;
+            const currentChainId = parseInt(chainId, 16);
+
+            // If not on Tempo, switch networks
+            if (currentChainId !== tempoTestnet.id) {
+                console.log(`Switching from chain ${currentChainId} to Tempo (${tempoTestnet.id})`);
+                await switchToTempoNetwork(provider);
+                // Wait a bit for the network switch to complete
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+
+            const accounts = await provider.request({ method: "eth_accounts" }) as string[];
+
+            if (!accounts || accounts.length === 0) {
+                setError("No wallet address found. Please reconnect.");
+                setIsLoading(false);
+                return false;
+            }
+
+            const address = accounts[0];
 
             const walletClient = createWalletClient({
                 account: address as `0x${string}`,

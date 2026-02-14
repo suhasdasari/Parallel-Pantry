@@ -7,7 +7,6 @@ import DonationModal from "@/components/DonationModal";
 import { HandHeart, Users, Heart, Vault } from "lucide-react";
 import { motion } from "framer-motion";
 import { useVault } from "@/hooks/useVault";
-import { formatUnits } from "viem";
 
 
 
@@ -38,7 +37,7 @@ export default function DonatePage() {
 
     // Format vault balance for display
     const formattedBalance = vaultBalance
-        ? `$${parseFloat(formatUnits(BigInt(vaultBalance), 18)).toFixed(2)}`
+        ? `$${parseFloat(vaultBalance).toFixed(2)}`
         : "$0.00";
 
     return (

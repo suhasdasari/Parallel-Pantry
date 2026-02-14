@@ -1,16 +1,17 @@
 // Contract addresses and configuration for Tempo network
 export const TEMPO_NETWORK = {
-    chainId: 42429,
-    name: "Tempo Testnet",
+    chainId: 42431,
+    name: "Tempo Testnet (Moderato)",
     rpcUrl: "https://rpc.moderato.tempo.xyz",
     blockExplorer: "https://explore.tempo.xyz",
 } as const;
 
 // pathUSD token (predeployed on Tempo)
 export const PATH_USD_ADDRESS = "0x20C0000000000000000000000000000000000000";
+export const PATH_USD_DECIMALS = 6;
 
 // Vault contract address
-export const VAULT_ADDRESS = "0x935602ED352b287247053C2aE9Ab97C4e431CF35";
+export const VAULT_ADDRESS = "0x0b3012EdaA34872d536CeE2f80D4BfFD6e854B6A";
 
 // Vault ABI (only the functions we need for the frontend)
 export const VAULT_ABI = [

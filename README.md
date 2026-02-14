@@ -58,6 +58,18 @@ This project uses:
     -   `Providers.tsx`: Authentication and context providers
 -   `/public`: Static assets
 
+## Tempo Network & Smart Contract
+
+This project is deployed on the **Tempo Testnet (Moderato)**.
+
+-   **Chain ID:** 42431
+-   **RPC URL:** `https://rpc.moderato.tempo.xyz`
+-   **Currency:** USD (pathUSD)
+-   **Vault Contract Address:** `0x0b3012EdaA34872d536CeE2f80D4BfFD6e854B6A`
+-   **pathUSD Token Address:** `0x20C0000000000000000000000000000000000000`
+
+The vault contract manages community donations and is integrated with our AI verification system for secure withdrawals.
+
 ## Team
 
 -   **Developer Suhas**: Backend, L1 Integration, Identity

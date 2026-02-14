@@ -27,7 +27,33 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                     logo: "https://your-logo-url", // Placeholder
                 },
                 loginMethods: ["email", "wallet"],
-                // embeddedWallets configuration removed to fix type error
+                supportedChains: [
+                    {
+                        id: 42431,
+                        name: "Tempo Testnet (Moderato)",
+                        network: "tempo-testnet",
+                        nativeCurrency: {
+                            name: "USD",
+                            symbol: "USD",
+                            decimals: 18,
+                        },
+                        rpcUrls: {
+                            default: {
+                                http: ["https://rpc.moderato.tempo.xyz"],
+                            },
+                            public: {
+                                http: ["https://rpc.moderato.tempo.xyz"],
+                            },
+                        },
+                        blockExplorers: {
+                            default: {
+                                name: "Tempo Explorer",
+                                url: "https://explore.tempo.xyz",
+                            },
+                        },
+                        testnet: true,
+                    },
+                ],
             }}
         >
             {children}

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
@@ -11,6 +12,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @dev Designed for Tempo L1 blockchain with pathUSD token
  */
 contract ParallelPantryVault is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     // pathUSD token address on Tempo network
     IERC20 public immutable pathUSD;
     
@@ -52,10 +55,7 @@ contract ParallelPantryVault is Ownable, ReentrancyGuard {
         require(amount > 0, "Amount must be greater than 0");
         
         // Transfer pathUSD from donor to vault
-        require(
-            pathUSD.transferFrom(msg.sender, address(this), amount),
-            "Transfer failed"
-        );
+        pathUSD.safeTransferFrom(msg.sender, address(this), amount);
         
         // Update state
         donations[msg.sender] += amount;
@@ -76,10 +76,7 @@ contract ParallelPantryVault is Ownable, ReentrancyGuard {
         require(getBalance() >= amount, "Insufficient balance");
         
         // Transfer pathUSD to recipient
-        require(
-            pathUSD.transfer(recipient, amount),
-            "Transfer failed"
-        );
+        pathUSD.safeTransfer(recipient, amount);
         
         // Update state
         totalWithdrawn += amount;

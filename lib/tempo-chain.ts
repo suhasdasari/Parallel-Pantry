@@ -1,16 +1,17 @@
 import { defineChain } from "viem";
 
 export const tempoTestnet = defineChain({
-    id: 42429,
-    name: "Tempo Testnet",
+    id: 42431,
+    name: "Tempo Testnet (Moderato)",
     nativeCurrency: {
         decimals: 18,
-        name: "pathUSD",
-        symbol: "pathUSD",
+        name: "USD",
+        symbol: "USD",
     },
     rpcUrls: {
         default: {
             http: ["https://rpc.moderato.tempo.xyz"],
+            webSocket: ["wss://rpc.moderato.tempo.xyz"],
         },
     },
     blockExplorers: {

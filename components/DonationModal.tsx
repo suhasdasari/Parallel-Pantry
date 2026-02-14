@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import { Coins, ShieldCheck, X, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useVault } from "@/hooks/useVault";
 import { parseUnits } from "viem";
+import { PATH_USD_DECIMALS } from "@/lib/contracts";
 
 
 interface DonationModalProps {
@@ -20,23 +21,38 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
     const [isSuccess, setIsSuccess] = useState(false);
     const [txHash, setTxHash] = useState("");
 
-    const { authenticated, login } = usePrivy();
+    const { authenticated, login, connectWallet } = usePrivy();
+    const { wallets } = useWallets();
     const { deposit, isLoading, error } = useVault();
 
     const handleDonation = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Step 1: Check if user is authenticated
         if (!authenticated) {
             login();
             return;
         }
 
+        // Step 2: Check if external wallet is connected
+        if (wallets.length === 0) {
+            // Trigger external wallet connection (MetaMask)
+            try {
+                await connectWallet();
+                return; // User will need to click again after connecting
+            } catch (err) {
+                console.error("Wallet connection error:", err);
+                return;
+            }
+        }
+
+        // Step 3: Proceed with donation
         try {
-            // Convert amount to wei (pathUSD has 18 decimals)
-            const amountInWei = parseUnits(amount, 18);
+            // Convert amount to raw units (pathUSD has 6 decimals)
+            const amountInRaw = parseUnits(amount, PATH_USD_DECIMALS);
 
             // Call vault deposit function
-            const success = await deposit(amountInWei.toString());
+            const success = await deposit(amountInRaw.toString());
 
             if (success) {
                 setIsSuccess(true);
@@ -166,7 +182,12 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                                         ) : !authenticated ? (
                                             <>
                                                 <Wallet size={18} />
-                                                Connect Wallet to Donate
+                                                Login to Continue
+                                            </>
+                                        ) : wallets.length === 0 ? (
+                                            <>
+                                                <Wallet size={18} />
+                                                Connect Wallet (MetaMask)
                                             </>
                                         ) : (
                                             <>
